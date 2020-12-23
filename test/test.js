@@ -58,9 +58,9 @@
 
 	var _redux = __webpack_require__(2);
 
-	var _index = __webpack_require__(24);
+	var _index = __webpack_require__(23);
 
-	var _deepEqual = __webpack_require__(28);
+	var _deepEqual = __webpack_require__(27);
 
 	var _deepEqual2 = _interopRequireDefault(_deepEqual);
 
@@ -500,23 +500,23 @@
 
 	var _createStore2 = _interopRequireDefault(_createStore);
 
-	var _combineReducers = __webpack_require__(19);
+	var _combineReducers = __webpack_require__(18);
 
 	var _combineReducers2 = _interopRequireDefault(_combineReducers);
 
-	var _bindActionCreators = __webpack_require__(21);
+	var _bindActionCreators = __webpack_require__(20);
 
 	var _bindActionCreators2 = _interopRequireDefault(_bindActionCreators);
 
-	var _applyMiddleware = __webpack_require__(22);
+	var _applyMiddleware = __webpack_require__(21);
 
 	var _applyMiddleware2 = _interopRequireDefault(_applyMiddleware);
 
-	var _compose = __webpack_require__(23);
+	var _compose = __webpack_require__(22);
 
 	var _compose2 = _interopRequireDefault(_compose);
 
-	var _warning = __webpack_require__(20);
+	var _warning = __webpack_require__(19);
 
 	var _warning2 = _interopRequireDefault(_warning);
 
@@ -1287,20 +1287,13 @@
 /* 15 */
 /***/ function(module, exports, __webpack_require__) {
 
-	module.exports = __webpack_require__(16);
-
-
-/***/ },
-/* 16 */
-/***/ function(module, exports, __webpack_require__) {
-
 	/* WEBPACK VAR INJECTION */(function(global, module) {'use strict';
 
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
 	});
 
-	var _ponyfill = __webpack_require__(18);
+	var _ponyfill = __webpack_require__(17);
 
 	var _ponyfill2 = _interopRequireDefault(_ponyfill);
 
@@ -1323,10 +1316,10 @@
 
 	var result = (0, _ponyfill2['default'])(root);
 	exports['default'] = result;
-	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(17)(module)))
+	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }()), __webpack_require__(16)(module)))
 
 /***/ },
-/* 17 */
+/* 16 */
 /***/ function(module, exports) {
 
 	module.exports = function(module) {
@@ -1342,7 +1335,7 @@
 
 
 /***/ },
-/* 18 */
+/* 17 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -1370,7 +1363,7 @@
 	};
 
 /***/ },
-/* 19 */
+/* 18 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {'use strict';
@@ -1384,7 +1377,7 @@
 
 	var _isPlainObject2 = _interopRequireDefault(_isPlainObject);
 
-	var _warning = __webpack_require__(20);
+	var _warning = __webpack_require__(19);
 
 	var _warning2 = _interopRequireDefault(_warning);
 
@@ -1518,7 +1511,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(3)))
 
 /***/ },
-/* 20 */
+/* 19 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -1548,7 +1541,7 @@
 	}
 
 /***/ },
-/* 21 */
+/* 20 */
 /***/ function(module, exports) {
 
 	'use strict';
@@ -1604,7 +1597,7 @@
 	}
 
 /***/ },
-/* 22 */
+/* 21 */
 /***/ function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -1615,7 +1608,7 @@
 
 	exports['default'] = applyMiddleware;
 
-	var _compose = __webpack_require__(23);
+	var _compose = __webpack_require__(22);
 
 	var _compose2 = _interopRequireDefault(_compose);
 
@@ -1667,7 +1660,7 @@
 	}
 
 /***/ },
-/* 23 */
+/* 22 */
 /***/ function(module, exports) {
 
 	"use strict";
@@ -1710,10 +1703,10 @@
 	}
 
 /***/ },
-/* 24 */
+/* 23 */
 /***/ function(module, exports, __webpack_require__) {
 
-	'use strict';
+	"use strict";
 
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
@@ -1728,7 +1721,7 @@
 	exports.combineLoads = combineLoads;
 	exports.clear = clear;
 
-	var _objectMerge = __webpack_require__(25);
+	var _objectMerge = __webpack_require__(24);
 
 	var _objectMerge2 = _interopRequireDefault(_objectMerge);
 
@@ -1736,14 +1729,15 @@
 
 	function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
-	var MODULE_NAME = '[Redux-LocalStorage-Simple]';
-	var NAMESPACE_DEFAULT = 'redux_localstorage_simple';
-	var NAMESPACE_SEPARATOR_DEFAULT = '_';
+	var MODULE_NAME = "[Redux-LocalStorage-Simple]";
+	var NAMESPACE_DEFAULT = "redux_localstorage_simple";
+	var NAMESPACE_SEPARATOR_DEFAULT = "_";
 	var STATES_DEFAULT = [];
 	var IGNORE_STATES_DEFAULT = [];
 	var DEBOUNCE_DEFAULT = 0;
 	var IMMUTABLEJS_DEFAULT = false;
 	var DISABLE_WARNINGS_DEFAULT = false;
+	var SECURE = false;
 	var debounceTimeout = null;
 
 	// ---------------------------------------------------
@@ -1846,7 +1840,7 @@
 	      return realiseObject_(objectPathArr.slice(1), _defineProperty({}, objectPathArr[0], objectInProgress));
 	    }
 	  }
-	  return realiseObject_(objectPath.split('.').reverse(), objectInitialValue);
+	  return realiseObject_(objectPath.split(".").reverse(), objectInitialValue);
 	}
 
 	// ---------------------------------------------------
@@ -1854,10 +1848,13 @@
 	// that localStorage can throw. JSON.parse() is handled here as well.
 
 	function SafeLocalStorage(warnFn) {
+	  var secure = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+
 	  this.warnFn = warnFn || warnConsole;
+	  this.secure = secure;
 	}
 
-	Object.defineProperty(SafeLocalStorage.prototype, 'length', {
+	Object.defineProperty(SafeLocalStorage.prototype, "length", {
 	  get: function length() {
 	    try {
 	      return localStorage.length;
@@ -1881,7 +1878,8 @@
 
 	SafeLocalStorage.prototype.setItem = function setItem(key, val) {
 	  try {
-	    localStorage.setItem(key, JSON.stringify(val));
+	    var data = this.secure ? btoa(JSON.stringify(val)) : JSON.stringify(val);
+	    localStorage.setItem(key, data);
 	  } catch (err) {
 	    this.warnFn(err);
 	  }
@@ -1889,7 +1887,7 @@
 
 	SafeLocalStorage.prototype.getItem = function getItem(key) {
 	  try {
-	    return JSON.parse(localStorage.getItem(key));
+	    return this.secure ? JSON.parse(atob(localStorage.getItem(key))) : JSON.parse(localStorage.getItem(key));
 	  } catch (err) {
 	    this.warnFn(err);
 	  }
@@ -1964,7 +1962,9 @@
 	      _ref$debounce = _ref.debounce,
 	      debounce = _ref$debounce === undefined ? DEBOUNCE_DEFAULT : _ref$debounce,
 	      _ref$disableWarnings = _ref.disableWarnings,
-	      disableWarnings = _ref$disableWarnings === undefined ? DISABLE_WARNINGS_DEFAULT : _ref$disableWarnings;
+	      disableWarnings = _ref$disableWarnings === undefined ? DISABLE_WARNINGS_DEFAULT : _ref$disableWarnings,
+	      _ref$secure = _ref.secure,
+	      secure = _ref$secure === undefined ? SECURE : _ref$secure;
 
 	  return function (store) {
 	    return function (next) {
@@ -2023,7 +2023,7 @@
 	          state_ = store.getState();
 	        }
 
-	        var storage = new SafeLocalStorage(warn_);
+	        var storage = new SafeLocalStorage(warn_, secure);
 
 	        // Check to see whether to debounce LocalStorage saving
 	        if (debounce) {
@@ -2043,7 +2043,7 @@
 
 	        // Digs into rootState for the data to put in LocalStorage
 	        function getStateForLocalStorage(state, rootState) {
-	          var delimiter = '.';
+	          var delimiter = ".";
 
 	          if (state.split(delimiter).length > 1) {
 	            return lensPath(state.split(delimiter), rootState);
@@ -2122,7 +2122,9 @@
 	      _ref2$preloadedState = _ref2.preloadedState,
 	      preloadedState = _ref2$preloadedState === undefined ? {} : _ref2$preloadedState,
 	      _ref2$disableWarnings = _ref2.disableWarnings,
-	      disableWarnings = _ref2$disableWarnings === undefined ? DISABLE_WARNINGS_DEFAULT : _ref2$disableWarnings;
+	      disableWarnings = _ref2$disableWarnings === undefined ? DISABLE_WARNINGS_DEFAULT : _ref2$disableWarnings,
+	      _ref2$secure = _ref2.secure,
+	      secure = _ref2$secure === undefined ? SECURE : _ref2$secure;
 
 	  // Bake disableWarnings into the warn function
 	  var warn_ = warn(disableWarnings);
@@ -2147,10 +2149,10 @@
 
 	  // Display immmutablejs deprecation notice if developer tries to utilise it
 	  if (immutablejs === true) {
-	    warn_('Support for Immutable.js data structures has been deprecated as of version 2.0.0. Please use version 1.4.0 if you require this functionality.');
+	    warn_("Support for Immutable.js data structures has been deprecated as of version 2.0.0. Please use version 1.4.0 if you require this functionality.");
 	  }
 
-	  var storage = new SafeLocalStorage(warn_);
+	  var storage = new SafeLocalStorage(warn_, secure);
 
 	  var loadedState = preloadedState;
 
@@ -2241,7 +2243,9 @@
 	      _ref3$namespace = _ref3.namespace,
 	      namespace = _ref3$namespace === undefined ? NAMESPACE_DEFAULT : _ref3$namespace,
 	      _ref3$disableWarnings = _ref3.disableWarnings,
-	      disableWarnings = _ref3$disableWarnings === undefined ? DISABLE_WARNINGS_DEFAULT : _ref3$disableWarnings;
+	      disableWarnings = _ref3$disableWarnings === undefined ? DISABLE_WARNINGS_DEFAULT : _ref3$disableWarnings,
+	      _ref3$secure = _ref3.secure,
+	      secure = _ref3$secure === undefined ? SECURE : _ref3$secure;
 
 	  // Bake disableWarnings into the warn function
 	  var warn_ = warn(disableWarnings);
@@ -2252,7 +2256,7 @@
 	    namespace = NAMESPACE_DEFAULT;
 	  }
 
-	  var storage = new SafeLocalStorage(warn_);
+	  var storage = new SafeLocalStorage(warn_, secure);
 
 	  var len = storage.length;
 	  for (var ind = 0; ind < len; ind++) {
@@ -2269,19 +2273,19 @@
 	// Utility functions
 
 	function isArray(value) {
-	  return Object.prototype.toString.call(value) === '[object Array]';
+	  return Object.prototype.toString.call(value) === "[object Array]";
 	}
 
 	function isString(value) {
-	  return typeof value === 'string';
+	  return typeof value === "string";
 	}
 
 	function isInteger(value) {
-	  return typeof value === 'number' && isFinite(value) && Math.floor(value) === value;
+	  return typeof value === "number" && isFinite(value) && Math.floor(value) === value;
 	}
 
 	function isObject(value) {
-	  return value !== null && (typeof value === 'undefined' ? 'undefined' : _typeof(value)) === 'object';
+	  return value !== null && (typeof value === "undefined" ? "undefined" : _typeof(value)) === "object";
 	}
 
 	// Removes ignored states from the main state object
@@ -2300,7 +2304,7 @@
 	}
 
 /***/ },
-/* 25 */
+/* 24 */
 /***/ function(module, exports, __webpack_require__) {
 
 	/*
@@ -2421,8 +2425,8 @@
 	 */
 	function objectMerge(shadows) {
 	    'use strict';
-	    var objectForeach = __webpack_require__(26);
-	    var cloneFunction = __webpack_require__(27);
+	    var objectForeach = __webpack_require__(25);
+	    var cloneFunction = __webpack_require__(26);
 	    // this is the queue of visited objects / properties.
 	    var visited = [];
 	    // various merge options
@@ -2525,7 +2529,7 @@
 	module.exports = objectMerge;
 
 /***/ },
-/* 26 */
+/* 25 */
 /***/ function(module, exports) {
 
 	/**
@@ -2548,7 +2552,7 @@
 	module.exports = objectForeach;
 
 /***/ },
-/* 27 */
+/* 26 */
 /***/ function(module, exports) {
 
 	/*
@@ -2583,12 +2587,12 @@
 	module.exports = cloneFunction;
 
 /***/ },
-/* 28 */
+/* 27 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var pSlice = Array.prototype.slice;
-	var objectKeys = __webpack_require__(29);
-	var isArguments = __webpack_require__(30);
+	var objectKeys = __webpack_require__(28);
+	var isArguments = __webpack_require__(29);
 
 	var deepEqual = module.exports = function (actual, expected, opts) {
 	  if (!opts) opts = {};
@@ -2683,7 +2687,7 @@
 
 
 /***/ },
-/* 29 */
+/* 28 */
 /***/ function(module, exports) {
 
 	exports = module.exports = typeof Object.keys === 'function'
@@ -2698,7 +2702,7 @@
 
 
 /***/ },
-/* 30 */
+/* 29 */
 /***/ function(module, exports) {
 
 	var supportsArgumentsClass = (function(){

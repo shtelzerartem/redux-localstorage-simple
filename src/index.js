@@ -1,16 +1,17 @@
-'use strict'
+"use strict";
 
-import objectMerge from 'object-merge'
+import objectMerge from "object-merge";
 
-const MODULE_NAME = '[Redux-LocalStorage-Simple]'
-const NAMESPACE_DEFAULT = 'redux_localstorage_simple'
-const NAMESPACE_SEPARATOR_DEFAULT = '_'
-const STATES_DEFAULT = []
-const IGNORE_STATES_DEFAULT = []
-const DEBOUNCE_DEFAULT = 0
-const IMMUTABLEJS_DEFAULT = false
-const DISABLE_WARNINGS_DEFAULT = false
-let debounceTimeout = null
+const MODULE_NAME = "[Redux-LocalStorage-Simple]";
+const NAMESPACE_DEFAULT = "redux_localstorage_simple";
+const NAMESPACE_SEPARATOR_DEFAULT = "_";
+const STATES_DEFAULT = [];
+const IGNORE_STATES_DEFAULT = [];
+const DEBOUNCE_DEFAULT = 0;
+const IMMUTABLEJS_DEFAULT = false;
+const DISABLE_WARNINGS_DEFAULT = false;
+const SECURE = false;
+let debounceTimeout = null;
 
 // ---------------------------------------------------
 /* warn
@@ -26,15 +27,15 @@ let debounceTimeout = null
 
 */
 
-function warnConsole (warningMessage) {
-  console.warn(MODULE_NAME, warningMessage)
+function warnConsole(warningMessage) {
+  console.warn(MODULE_NAME, warningMessage);
 }
 
-function warnSilent (_warningMessage) {
+function warnSilent(_warningMessage) {
   // Empty
 }
 
-const warn = disableWarnings => (disableWarnings ? warnSilent : warnConsole)
+const warn = (disableWarnings) => (disableWarnings ? warnSilent : warnConsole);
 
 // ---------------------------------------------------
 /* lensPath
@@ -61,13 +62,13 @@ const warn = disableWarnings => (disableWarnings ? warnSilent : warnConsole)
   123
 */
 
-function lensPath (path, obj) {
+function lensPath(path, obj) {
   if (obj === undefined) {
-    return null
+    return null;
   } else if (path.length === 1) {
-    return obj[path[0]]
+    return obj[path[0]];
   } else {
-    return lensPath(path.slice(1), obj[path[0]])
+    return lensPath(path.slice(1), obj[path[0]]);
   }
 }
 
@@ -100,71 +101,77 @@ function lensPath (path, obj) {
   }
 */
 
-function realiseObject (objectPath, objectInitialValue = {}) {
-  function realiseObject_ (objectPathArr, objectInProgress) {
+function realiseObject(objectPath, objectInitialValue = {}) {
+  function realiseObject_(objectPathArr, objectInProgress) {
     if (objectPathArr.length === 0) {
-      return objectInProgress
+      return objectInProgress;
     } else {
-      return realiseObject_(objectPathArr.slice(1), {[objectPathArr[0]]: objectInProgress})
+      return realiseObject_(objectPathArr.slice(1), {
+        [objectPathArr[0]]: objectInProgress,
+      });
     }
   }
-  return realiseObject_(objectPath.split('.').reverse(), objectInitialValue)
+  return realiseObject_(objectPath.split(".").reverse(), objectInitialValue);
 }
 
 // ---------------------------------------------------
 // SafeLocalStorage wrapper to handle the minefield of exceptions
 // that localStorage can throw. JSON.parse() is handled here as well.
 
-function SafeLocalStorage (warnFn) {
-  this.warnFn = warnFn || warnConsole
+function SafeLocalStorage(warnFn, secure = false) {
+  this.warnFn = warnFn || warnConsole;
+  this.secure = secure;
 }
 
-Object.defineProperty(SafeLocalStorage.prototype, 'length', {
-  get: function length () {
+Object.defineProperty(SafeLocalStorage.prototype, "length", {
+  get: function length() {
     try {
-      return localStorage.length
+      return localStorage.length;
     } catch (err) {
-      this.warnFn(err)
+      this.warnFn(err);
     }
-    return 0
+    return 0;
   },
   configurable: true,
-  enumerable: true
+  enumerable: true,
 });
 
-SafeLocalStorage.prototype.key = function key (ind) {
+SafeLocalStorage.prototype.key = function key(ind) {
   try {
-    return localStorage.key(ind)
+    return localStorage.key(ind);
   } catch (err) {
-    this.warnFn(err)
+    this.warnFn(err);
   }
-  return null
-}
+  return null;
+};
 
-SafeLocalStorage.prototype.setItem = function setItem (key, val) {
+SafeLocalStorage.prototype.setItem = function setItem(key, val) {
   try {
-    localStorage.setItem(key, JSON.stringify(val))
+    const data = this.secure ? btoa(JSON.stringify(val)) : JSON.stringify(val);
+    localStorage.setItem(key, data);
   } catch (err) {
-    this.warnFn(err)
+    this.warnFn(err);
   }
-}
+};
 
-SafeLocalStorage.prototype.getItem = function getItem (key) {
+SafeLocalStorage.prototype.getItem = function getItem(key) {
   try {
-    return JSON.parse(localStorage.getItem(key))
+    return this.secure
+      ? JSON.parse(atob(localStorage.getItem(key)))
+      : JSON.parse(localStorage.getItem(key));
   } catch (err) {
-    this.warnFn(err)
+    this.warnFn(err);
   }
-  return null
-}
+  return null;
+};
 
-SafeLocalStorage.prototype.removeItem = function removeItem (key) {
+SafeLocalStorage.prototype.removeItem = function removeItem(key) {
   try {
-    localStorage.removeItem(key)
+    localStorage.removeItem(key);
   } catch (err) {
-    this.warnFn(err)
+    this.warnFn(err);
   }
-}
+};
 
 // ---------------------------------------------------
 
@@ -213,118 +220,137 @@ SafeLocalStorage.prototype.removeItem = function removeItem (key) {
     })
 */
 
-export function save ({
-      states = STATES_DEFAULT,
-      ignoreStates = IGNORE_STATES_DEFAULT,
-      namespace = NAMESPACE_DEFAULT,
-      namespaceSeparator = NAMESPACE_SEPARATOR_DEFAULT,
-      debounce = DEBOUNCE_DEFAULT,
-      disableWarnings = DISABLE_WARNINGS_DEFAULT
-    } = {}) {
-  return store => next => action => {
+export function save({
+  states = STATES_DEFAULT,
+  ignoreStates = IGNORE_STATES_DEFAULT,
+  namespace = NAMESPACE_DEFAULT,
+  namespaceSeparator = NAMESPACE_SEPARATOR_DEFAULT,
+  debounce = DEBOUNCE_DEFAULT,
+  disableWarnings = DISABLE_WARNINGS_DEFAULT,
+  secure = SECURE,
+} = {}) {
+  return (store) => (next) => (action) => {
     // Bake disableWarnings into the warn function
-    const warn_ = warn(disableWarnings)
+    const warn_ = warn(disableWarnings);
 
-    const returnValue = next(action)
-    let state_
+    const returnValue = next(action);
+    let state_;
 
     // Validate 'states' parameter
     if (!isArray(states)) {
-      console.error(MODULE_NAME, "'states' parameter in 'save()' method was passed a non-array value. Setting default value instead. Check your 'save()' method.")
-      states = STATES_DEFAULT
+      console.error(
+        MODULE_NAME,
+        "'states' parameter in 'save()' method was passed a non-array value. Setting default value instead. Check your 'save()' method."
+      );
+      states = STATES_DEFAULT;
     }
 
     // Validate 'ignoreStates' parameter
     if (!isArray(ignoreStates)) {
-      console.error(MODULE_NAME, "'ignoreStates' parameter in 'save()' method was passed a non-array value. Setting default value instead. Check your 'save()' method.")
-      ignoreStates = IGNORE_STATES_DEFAULT
+      console.error(
+        MODULE_NAME,
+        "'ignoreStates' parameter in 'save()' method was passed a non-array value. Setting default value instead. Check your 'save()' method."
+      );
+      ignoreStates = IGNORE_STATES_DEFAULT;
     }
 
     // Validate individual entries in'ignoreStates' parameter
     if (ignoreStates.length > 0) {
       ignoreStates = ignoreStates.filter(function (ignoreState) {
         if (!isString(ignoreState)) {
-          console.error(MODULE_NAME, "'ignoreStates' array contains a non-string value. Ignoring this value. Check your 'ignoreStates' array.")
+          console.error(
+            MODULE_NAME,
+            "'ignoreStates' array contains a non-string value. Ignoring this value. Check your 'ignoreStates' array."
+          );
         } else {
-          return ignoreState
+          return ignoreState;
         }
-      })
+      });
     }
 
     // Validate 'namespace' parameter
     if (!isString(namespace)) {
-      console.error(MODULE_NAME, "'namespace' parameter in 'save()' method was passed a non-string value. Setting default value instead. Check your 'save()' method.")
-      namespace = NAMESPACE_DEFAULT
+      console.error(
+        MODULE_NAME,
+        "'namespace' parameter in 'save()' method was passed a non-string value. Setting default value instead. Check your 'save()' method."
+      );
+      namespace = NAMESPACE_DEFAULT;
     }
 
     // Validate 'namespaceSeparator' parameter
     if (!isString(namespaceSeparator)) {
-      console.error(MODULE_NAME, "'namespaceSeparator' parameter in 'save()' method was passed a non-string value. Setting default value instead. Check your 'save()' method.")
-      namespaceSeparator = NAMESPACE_SEPARATOR_DEFAULT
+      console.error(
+        MODULE_NAME,
+        "'namespaceSeparator' parameter in 'save()' method was passed a non-string value. Setting default value instead. Check your 'save()' method."
+      );
+      namespaceSeparator = NAMESPACE_SEPARATOR_DEFAULT;
     }
 
     // Validate 'debounce' parameter
     if (!isInteger(debounce)) {
-      console.error(MODULE_NAME, "'debounce' parameter in 'save()' method was passed a non-integer value. Setting default value instead. Check your 'save()' method.")
-      debounce = DEBOUNCE_DEFAULT
+      console.error(
+        MODULE_NAME,
+        "'debounce' parameter in 'save()' method was passed a non-integer value. Setting default value instead. Check your 'save()' method."
+      );
+      debounce = DEBOUNCE_DEFAULT;
     }
 
     // Check if there are states to ignore
     if (ignoreStates.length > 0) {
-      state_= handleIgnoreStates(ignoreStates, store.getState())
+      state_ = handleIgnoreStates(ignoreStates, store.getState());
     } else {
-      state_= store.getState()
+      state_ = store.getState();
     }
 
-    const storage = new SafeLocalStorage(warn_)
+    const storage = new SafeLocalStorage(warn_, secure);
 
     // Check to see whether to debounce LocalStorage saving
     if (debounce) {
       // Clear the debounce timeout if it was previously set
       if (debounceTimeout) {
-        clearTimeout(debounceTimeout)
+        clearTimeout(debounceTimeout);
       }
 
       // Save to LocalStorage after the debounce period has elapsed
       debounceTimeout = setTimeout(function () {
-        _save(states, namespace)
-      }, debounce)
-    // No debouncing necessary so save to LocalStorage right now
+        _save(states, namespace);
+      }, debounce);
+      // No debouncing necessary so save to LocalStorage right now
     } else {
-      _save(states, namespace)
+      _save(states, namespace);
     }
 
     // Digs into rootState for the data to put in LocalStorage
-    function getStateForLocalStorage (state, rootState) {
-      const delimiter = '.'
+    function getStateForLocalStorage(state, rootState) {
+      const delimiter = ".";
 
       if (state.split(delimiter).length > 1) {
-        return lensPath(state.split(delimiter), rootState)
+        return lensPath(state.split(delimiter), rootState);
       } else {
-        return lensPath([state], rootState)
+        return lensPath([state], rootState);
       }
     }
 
     // Local function to avoid duplication of code above
-    function _save () {
+    function _save() {
       if (states.length === 0) {
-        storage.setItem(namespace, state_)
+        storage.setItem(namespace, state_);
       } else {
-        states.forEach(state => {
-          const key = namespace + namespaceSeparator + state
-          const stateForLocalStorage = getStateForLocalStorage(state, state_)
+        states.forEach((state) => {
+          const key = namespace + namespaceSeparator + state;
+          const stateForLocalStorage = getStateForLocalStorage(state, state_);
           if (stateForLocalStorage) {
-            storage.setItem(key, stateForLocalStorage)
+            storage.setItem(key, stateForLocalStorage);
           } else {
             // Make sure nothing is ever saved for this incorrect state
-            storage.removeItem(key)
+            storage.removeItem(key);
           }
-        })
+        });
       }
     }
 
-    return returnValue
-  }
+    return returnValue;
+  };
 }
 
 /**
@@ -360,63 +386,80 @@ export function save ({
 
 */
 
-export function load ({
-      states = STATES_DEFAULT,
-      immutablejs = IMMUTABLEJS_DEFAULT,
-      namespace = NAMESPACE_DEFAULT,
-      namespaceSeparator = NAMESPACE_SEPARATOR_DEFAULT,
-      preloadedState = {},
-      disableWarnings = DISABLE_WARNINGS_DEFAULT
-    } = {}) {
+export function load({
+  states = STATES_DEFAULT,
+  immutablejs = IMMUTABLEJS_DEFAULT,
+  namespace = NAMESPACE_DEFAULT,
+  namespaceSeparator = NAMESPACE_SEPARATOR_DEFAULT,
+  preloadedState = {},
+  disableWarnings = DISABLE_WARNINGS_DEFAULT,
+  secure = SECURE,
+} = {}) {
   // Bake disableWarnings into the warn function
-  const warn_ = warn(disableWarnings)
+  const warn_ = warn(disableWarnings);
 
   // Validate 'states' parameter
   if (!isArray(states)) {
-    console.error(MODULE_NAME, "'states' parameter in 'load()' method was passed a non-array value. Setting default value instead. Check your 'load()' method.")
-    states = STATES_DEFAULT
+    console.error(
+      MODULE_NAME,
+      "'states' parameter in 'load()' method was passed a non-array value. Setting default value instead. Check your 'load()' method."
+    );
+    states = STATES_DEFAULT;
   }
 
   // Validate 'namespace' parameter
   if (!isString(namespace)) {
-    console.error(MODULE_NAME, "'namespace' parameter in 'load()' method was passed a non-string value. Setting default value instead. Check your 'load()' method.")
-    namespace = NAMESPACE_DEFAULT
+    console.error(
+      MODULE_NAME,
+      "'namespace' parameter in 'load()' method was passed a non-string value. Setting default value instead. Check your 'load()' method."
+    );
+    namespace = NAMESPACE_DEFAULT;
   }
 
   // Validate 'namespaceSeparator' parameter
   if (!isString(namespaceSeparator)) {
-    console.error(MODULE_NAME, "'namespaceSeparator' parameter in 'load()' method was passed a non-string value. Setting default value instead. Check your 'load()' method.")
-    namespaceSeparator = NAMESPACE_SEPARATOR_DEFAULT
+    console.error(
+      MODULE_NAME,
+      "'namespaceSeparator' parameter in 'load()' method was passed a non-string value. Setting default value instead. Check your 'load()' method."
+    );
+    namespaceSeparator = NAMESPACE_SEPARATOR_DEFAULT;
   }
 
   // Display immmutablejs deprecation notice if developer tries to utilise it
   if (immutablejs === true) {
-    warn_('Support for Immutable.js data structures has been deprecated as of version 2.0.0. Please use version 1.4.0 if you require this functionality.')
+    warn_(
+      "Support for Immutable.js data structures has been deprecated as of version 2.0.0. Please use version 1.4.0 if you require this functionality."
+    );
   }
 
-  const storage = new SafeLocalStorage(warn_)
+  const storage = new SafeLocalStorage(warn_, secure);
 
-  let loadedState = preloadedState
+  let loadedState = preloadedState;
 
   // Load all of the namespaced Redux data from LocalStorage into local Redux state tree
   if (states.length === 0) {
-    const val = storage.getItem(namespace)
+    const val = storage.getItem(namespace);
     if (val) {
-      loadedState = val
+      loadedState = val;
     }
-  } else { // Load only specified states into the local Redux state tree
+  } else {
+    // Load only specified states into the local Redux state tree
     states.forEach(function (state) {
-      const key = namespace + namespaceSeparator + state
-      const val = storage.getItem(key)
+      const key = namespace + namespaceSeparator + state;
+      const val = storage.getItem(key);
       if (val) {
-        loadedState = objectMerge(loadedState, realiseObject(state, val))
+        loadedState = objectMerge(loadedState, realiseObject(state, val));
       } else {
-        warn_("Invalid load '" + key + "' provided. Check your 'states' in 'load()'. If this is your first time running this app you may see this message. To disable it in future use the 'disableWarnings' flag, see documentation.")
+        warn_(
+          "Invalid load '" +
+            key +
+            "' provided. Check your 'states' in 'load()'. If this is your first time running this app you may see this message. To disable it in future use the 'disableWarnings' flag, see documentation."
+        );
       }
-    })
+    });
   }
 
-  return loadedState
+  return loadedState;
 }
 
 /**
@@ -436,22 +479,25 @@ export function load ({
     )
 */
 
-export function combineLoads (...loads) {
-  let combinedLoad = {}
+export function combineLoads(...loads) {
+  let combinedLoad = {};
 
-  loads.forEach(load => {
+  loads.forEach((load) => {
     // Make sure current 'load' is an object
     if (!isObject(load)) {
-      console.error(MODULE_NAME, "One or more loads provided to 'combineLoads()' is not a valid object. Ignoring the invalid load/s. Check your 'combineLoads()' method.")
-      load = {}
+      console.error(
+        MODULE_NAME,
+        "One or more loads provided to 'combineLoads()' is not a valid object. Ignoring the invalid load/s. Check your 'combineLoads()' method."
+      );
+      load = {};
     }
 
     for (let state in load) {
-      combinedLoad[state] = load[state]
+      combinedLoad[state] = load[state];
     }
-  })
+  });
 
-  return combinedLoad
+  return combinedLoad;
 }
 
 /**
@@ -475,28 +521,32 @@ export function combineLoads (...loads) {
     })
 */
 
-export function clear ({
+export function clear({
   namespace = NAMESPACE_DEFAULT,
-  disableWarnings = DISABLE_WARNINGS_DEFAULT
+  disableWarnings = DISABLE_WARNINGS_DEFAULT,
+  secure = SECURE,
 } = {}) {
   // Bake disableWarnings into the warn function
-  const warn_ = warn(disableWarnings)
+  const warn_ = warn(disableWarnings);
 
   // Validate 'namespace' parameter
   if (!isString(namespace)) {
-    console.error(MODULE_NAME, "'namespace' parameter in 'clear()' method was passed a non-string value. Setting default value instead. Check your 'clear()' method.")
-    namespace = NAMESPACE_DEFAULT
+    console.error(
+      MODULE_NAME,
+      "'namespace' parameter in 'clear()' method was passed a non-string value. Setting default value instead. Check your 'clear()' method."
+    );
+    namespace = NAMESPACE_DEFAULT;
   }
 
-  const storage = new SafeLocalStorage(warn_)
+  const storage = new SafeLocalStorage(warn_, secure);
 
-  const len = storage.length
+  const len = storage.length;
   for (let ind = 0; ind < len; ind++) {
-    const key = storage.key(ind)
+    const key = storage.key(ind);
 
     // key starts with namespace
     if (key && key.slice(0, namespace.length) === namespace) {
-      storage.removeItem(key)
+      storage.removeItem(key);
     }
   }
 }
@@ -504,31 +554,35 @@ export function clear ({
 // ---------------------------------------------------
 // Utility functions
 
-function isArray (value) {
-  return Object.prototype.toString.call(value) === '[object Array]'
+function isArray(value) {
+  return Object.prototype.toString.call(value) === "[object Array]";
 }
 
-function isString (value) {
-  return typeof value === 'string'
+function isString(value) {
+  return typeof value === "string";
 }
 
-function isInteger (value) {
-  return typeof value === 'number' &&
-    isFinite(value) &&
-    Math.floor(value) === value
+function isInteger(value) {
+  return (
+    typeof value === "number" && isFinite(value) && Math.floor(value) === value
+  );
 }
 
-function isObject (value) {
-  return value !== null && typeof value === 'object'
+function isObject(value) {
+  return value !== null && typeof value === "object";
 }
 
 // Removes ignored states from the main state object
-function handleIgnoreStates (ignoreStates, stateFull) {
-  let stateFullMinusIgnoreStates = Object.entries(stateFull).reduce(function (acc, [key, value]) {
+function handleIgnoreStates(ignoreStates, stateFull) {
+  let stateFullMinusIgnoreStates = Object.entries(stateFull).reduce(function (
+    acc,
+    [key, value]
+  ) {
     if (ignoreStates.indexOf(key) === -1) {
-      acc[key] = stateFull[key]
+      acc[key] = stateFull[key];
     }
-    return acc
-  }, {})
-  return stateFullMinusIgnoreStates
+    return acc;
+  },
+  {});
+  return stateFullMinusIgnoreStates;
 }

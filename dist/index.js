@@ -1,4 +1,4 @@
-'use strict';
+"use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
@@ -13,7 +13,7 @@ exports.load = load;
 exports.combineLoads = combineLoads;
 exports.clear = clear;
 
-var _objectMerge = require('object-merge');
+var _objectMerge = require("object-merge");
 
 var _objectMerge2 = _interopRequireDefault(_objectMerge);
 
@@ -21,14 +21,15 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
-var MODULE_NAME = '[Redux-LocalStorage-Simple]';
-var NAMESPACE_DEFAULT = 'redux_localstorage_simple';
-var NAMESPACE_SEPARATOR_DEFAULT = '_';
+var MODULE_NAME = "[Redux-LocalStorage-Simple]";
+var NAMESPACE_DEFAULT = "redux_localstorage_simple";
+var NAMESPACE_SEPARATOR_DEFAULT = "_";
 var STATES_DEFAULT = [];
 var IGNORE_STATES_DEFAULT = [];
 var DEBOUNCE_DEFAULT = 0;
 var IMMUTABLEJS_DEFAULT = false;
 var DISABLE_WARNINGS_DEFAULT = false;
+var SECURE = false;
 var debounceTimeout = null;
 
 // ---------------------------------------------------
@@ -131,7 +132,7 @@ function realiseObject(objectPath) {
       return realiseObject_(objectPathArr.slice(1), _defineProperty({}, objectPathArr[0], objectInProgress));
     }
   }
-  return realiseObject_(objectPath.split('.').reverse(), objectInitialValue);
+  return realiseObject_(objectPath.split(".").reverse(), objectInitialValue);
 }
 
 // ---------------------------------------------------
@@ -139,10 +140,13 @@ function realiseObject(objectPath) {
 // that localStorage can throw. JSON.parse() is handled here as well.
 
 function SafeLocalStorage(warnFn) {
+  var secure = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
+
   this.warnFn = warnFn || warnConsole;
+  this.secure = secure;
 }
 
-Object.defineProperty(SafeLocalStorage.prototype, 'length', {
+Object.defineProperty(SafeLocalStorage.prototype, "length", {
   get: function length() {
     try {
       return localStorage.length;
@@ -166,7 +170,8 @@ SafeLocalStorage.prototype.key = function key(ind) {
 
 SafeLocalStorage.prototype.setItem = function setItem(key, val) {
   try {
-    localStorage.setItem(key, JSON.stringify(val));
+    var data = this.secure ? btoa(JSON.stringify(val)) : JSON.stringify(val);
+    localStorage.setItem(key, data);
   } catch (err) {
     this.warnFn(err);
   }
@@ -174,7 +179,7 @@ SafeLocalStorage.prototype.setItem = function setItem(key, val) {
 
 SafeLocalStorage.prototype.getItem = function getItem(key) {
   try {
-    return JSON.parse(localStorage.getItem(key));
+    return this.secure ? JSON.parse(atob(localStorage.getItem(key))) : JSON.parse(localStorage.getItem(key));
   } catch (err) {
     this.warnFn(err);
   }
@@ -249,7 +254,9 @@ function save() {
       _ref$debounce = _ref.debounce,
       debounce = _ref$debounce === undefined ? DEBOUNCE_DEFAULT : _ref$debounce,
       _ref$disableWarnings = _ref.disableWarnings,
-      disableWarnings = _ref$disableWarnings === undefined ? DISABLE_WARNINGS_DEFAULT : _ref$disableWarnings;
+      disableWarnings = _ref$disableWarnings === undefined ? DISABLE_WARNINGS_DEFAULT : _ref$disableWarnings,
+      _ref$secure = _ref.secure,
+      secure = _ref$secure === undefined ? SECURE : _ref$secure;
 
   return function (store) {
     return function (next) {
@@ -308,7 +315,7 @@ function save() {
           state_ = store.getState();
         }
 
-        var storage = new SafeLocalStorage(warn_);
+        var storage = new SafeLocalStorage(warn_, secure);
 
         // Check to see whether to debounce LocalStorage saving
         if (debounce) {
@@ -328,7 +335,7 @@ function save() {
 
         // Digs into rootState for the data to put in LocalStorage
         function getStateForLocalStorage(state, rootState) {
-          var delimiter = '.';
+          var delimiter = ".";
 
           if (state.split(delimiter).length > 1) {
             return lensPath(state.split(delimiter), rootState);
@@ -407,7 +414,9 @@ function load() {
       _ref2$preloadedState = _ref2.preloadedState,
       preloadedState = _ref2$preloadedState === undefined ? {} : _ref2$preloadedState,
       _ref2$disableWarnings = _ref2.disableWarnings,
-      disableWarnings = _ref2$disableWarnings === undefined ? DISABLE_WARNINGS_DEFAULT : _ref2$disableWarnings;
+      disableWarnings = _ref2$disableWarnings === undefined ? DISABLE_WARNINGS_DEFAULT : _ref2$disableWarnings,
+      _ref2$secure = _ref2.secure,
+      secure = _ref2$secure === undefined ? SECURE : _ref2$secure;
 
   // Bake disableWarnings into the warn function
   var warn_ = warn(disableWarnings);
@@ -432,10 +441,10 @@ function load() {
 
   // Display immmutablejs deprecation notice if developer tries to utilise it
   if (immutablejs === true) {
-    warn_('Support for Immutable.js data structures has been deprecated as of version 2.0.0. Please use version 1.4.0 if you require this functionality.');
+    warn_("Support for Immutable.js data structures has been deprecated as of version 2.0.0. Please use version 1.4.0 if you require this functionality.");
   }
 
-  var storage = new SafeLocalStorage(warn_);
+  var storage = new SafeLocalStorage(warn_, secure);
 
   var loadedState = preloadedState;
 
@@ -526,7 +535,9 @@ function clear() {
       _ref3$namespace = _ref3.namespace,
       namespace = _ref3$namespace === undefined ? NAMESPACE_DEFAULT : _ref3$namespace,
       _ref3$disableWarnings = _ref3.disableWarnings,
-      disableWarnings = _ref3$disableWarnings === undefined ? DISABLE_WARNINGS_DEFAULT : _ref3$disableWarnings;
+      disableWarnings = _ref3$disableWarnings === undefined ? DISABLE_WARNINGS_DEFAULT : _ref3$disableWarnings,
+      _ref3$secure = _ref3.secure,
+      secure = _ref3$secure === undefined ? SECURE : _ref3$secure;
 
   // Bake disableWarnings into the warn function
   var warn_ = warn(disableWarnings);
@@ -537,7 +548,7 @@ function clear() {
     namespace = NAMESPACE_DEFAULT;
   }
 
-  var storage = new SafeLocalStorage(warn_);
+  var storage = new SafeLocalStorage(warn_, secure);
 
   var len = storage.length;
   for (var ind = 0; ind < len; ind++) {
@@ -554,19 +565,19 @@ function clear() {
 // Utility functions
 
 function isArray(value) {
-  return Object.prototype.toString.call(value) === '[object Array]';
+  return Object.prototype.toString.call(value) === "[object Array]";
 }
 
 function isString(value) {
-  return typeof value === 'string';
+  return typeof value === "string";
 }
 
 function isInteger(value) {
-  return typeof value === 'number' && isFinite(value) && Math.floor(value) === value;
+  return typeof value === "number" && isFinite(value) && Math.floor(value) === value;
 }
 
 function isObject(value) {
-  return value !== null && (typeof value === 'undefined' ? 'undefined' : _typeof(value)) === 'object';
+  return value !== null && (typeof value === "undefined" ? "undefined" : _typeof(value)) === "object";
 }
 
 // Removes ignored states from the main state object
