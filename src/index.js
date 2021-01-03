@@ -148,7 +148,7 @@ SafeLocalStorage.prototype.key = function key(ind) {
 SafeLocalStorage.prototype.setItem = function setItem(key, val) {
   try {
     const data = this.secure ? btoa(JSON.stringify(val)) : JSON.stringify(val);
-    localStorage.setItem(key, data);
+    localStorage.setItem(this.secure ? btoa(key) : key, data);
   } catch (err) {
     this.warnFn(err);
   }
@@ -156,12 +156,15 @@ SafeLocalStorage.prototype.setItem = function setItem(key, val) {
 
 SafeLocalStorage.prototype.getItem = function getItem(key) {
   try {
-    return this.secure
-      ? JSON.parse(atob(localStorage.getItem(key)))
-      : JSON.parse(localStorage.getItem(key));
+    return JSON.parse(
+      this.secure
+        ? atob(localStorage.getItem(atob(key)))
+        : localStorage.getItem(key)
+    );
   } catch (err) {
     this.warnFn(err);
   }
+
   return null;
 };
 
